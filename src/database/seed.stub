@@ -1,0 +1,4 @@
+import { knex } from 'knex'
+
+export async function seed(knex): Promise<any> {
+}
