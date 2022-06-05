@@ -8,22 +8,20 @@ import {
   Post,
   Put,
   Query,
+  Req,
   UseInterceptors,
 } from '@nestjs/common'
 import { ProductModel } from 'src/database/models/product.model'
 import { ProductsService } from './products.service'
+import { Request } from 'express';
 
 @Controller('products')
 export class ProductsController {
   constructor (private productsService: ProductsService) {}
 
   @Get()
-  async findAll (
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('search') search?: string,
-  ) {
-    return this.productsService.findAll(page, limit, search)
+  findAll(@Req() request: Request) {
+    return this.productsService.findAll(request);
   }
 
   @Get('list')

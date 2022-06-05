@@ -1,69 +1,74 @@
-import { Inject, Injectable } from '@nestjs/common'
-import { ModelClass, transaction } from 'objection'
-import { query } from '../auth/constants'
-import { VariantProductModel } from 'src/database/models/variant_product.model'
+import { Inject, Injectable, Req } from '@nestjs/common';
+import { ModelClass, transaction } from 'objection';
+import { query } from '../auth/constants';
+import { VariantProductModel } from 'src/database/models/variant_product.model';
+import { Request } from 'express';
 
 @Injectable()
 export class VariantProductsService {
-  constructor (
-    @Inject('VariantProductModel')
-    private modelClass: ModelClass<VariantProductModel>,
-  ) {}
+  constructor() {} // private modelClass: ModelClass<VariantProductModel>, // @Inject('VariantProductModel')
 
-  findAll (page: number, limit: number, search: string) {
-    let pageNo = page ? page : query.page
-    let pageLimit = limit ? limit : query.limit
+  findAll(request: Request) {
+    const pageNo = request.query.page ? request.query.page : query.page;
+    const pageLimit = request.query.limit ? request.query.limit : query.limit;
 
-    search = search ? '%' + search + '%' : ''
-
-    if (search == '') {
-      return this.modelClass
-        .query()
+    if (request.query.product_id != '') {
+      return VariantProductModel.query()
         .withGraphFetched('[product, color, size]')
-        .page(pageNo - 1, pageLimit)
+        .page(Number(pageNo) - 1, pageLimit)
+        .where('product_id', request.query.product_id);
     }
 
-    return this.modelClass
-      .query()
+    return VariantProductModel.query()
       .withGraphFetched('[product, color, size]')
-      .page(pageNo - 1, pageLimit)
+      .page(Number(pageNo) - 1, pageLimit);
   }
 
-  findOneById (id: number) {
-    return this.modelClass
-      .query()
+  findOneById(id: number) {
+    return VariantProductModel.query()
       .findById(id)
-      .withGraphFetched('[product, color, size]')
+      .withGraphFetched('[product, color, size]');
   }
 
-  findOne (barcode: string) {
-    return this.modelClass.query().findOne({ barcode })
+  findOne(barcode: string) {
+    return VariantProductModel.query().findOne({ barcode });
   }
 
-  async create (props: Partial<VariantProductModel>) {
-    return this.modelClass
-      .query()
-      .insert(props)
-      .returning('*')
+  async create(props: Partial<VariantProductModel>) {
+    try {
+      return await VariantProductModel.query().insert(props).returning('*');
+    } catch (err) {
+      console.log('err: ');
+      console.log(err.data);
+    }
   }
 
-  update (id: number, props: Partial<VariantProductModel>) {
-    return this.modelClass
-      .query()
-      .patch(props)
-      .where({ id })
-      .returning('*')
-      .first()
-  }
+  async update(id: number, props: Partial<VariantProductModel>) {
+    try {
+      const data = await VariantProductModel.query().findOne({ id });
 
-  delete (id: number) {
-    return transaction(this.modelClass, async (_, trx) => {
-      return this.modelClass
-        .query()
-        .deleteById(id)
+      return await data
+        .$query()
+        .update(props)
+        .where({ id })
         .returning('*')
-        .first()
-        .transacting(trx)
-    })
+        .first();
+    } catch (error) {
+      console.log('err: ');
+      console.log(error);
+    }
+  }
+
+  async delete(id: number) {
+    const data = await VariantProductModel.query().findOne({ id });
+    return await data.$query().delete();
+
+    // return transaction(VariantProductModel, async (_, trx) => {
+    //   return VariantProductModel.query()
+    //     .deleteById(id)
+    //     .returning('*')
+    //     .first()
+    //     .transacting(trx);
+    // });
   }
 }
