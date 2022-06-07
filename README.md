@@ -1,5 +1,6 @@
 # Account Management
 - Restore deleted list for colors, products etc.
+- Requisition
 ## Step by step
 
 - npm install objection knex

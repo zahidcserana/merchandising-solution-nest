@@ -1,18 +1,35 @@
+import { CustomerModel } from 'src/database/models/customer.model'
 import { BaseModel } from './base.model'
 import { IsEmail, IsNotEmpty } from 'class-validator'
+import { Model } from 'objection'
 const softDelete = require('objection-soft-delete')
 
 const unique = require('objection-unique')({
-  fields: ['name'],
+  fields: ['number'],
   identifiers: ['id'],
 })
 
-export class ColorModel extends softDelete({ columnName: 'deleted' })(
+export class RequisitionModel extends softDelete({ columnName: 'deleted' })(
   unique(BaseModel),
 ) {
-  static tableName = 'colors'
+  static tableName = 'requisitions'
 
-  name: string
-  slug: string
+  number: string
+  customerId: number
+  requiredDate: string
+  status: string
   deleted: boolean
+
+  customer: CustomerModel
+
+  static relationMappings = {
+    customer: {
+      modelClass: CustomerModel,
+      relation: Model.BelongsToOneRelation,
+      join: {
+        from: 'requisitions.customerId',
+        to: 'customers.id',
+      },
+    },
+  }
 }
